@@ -55,13 +55,43 @@
       color: #333333;
       text-decoration: none;
     }
+    .flash-message {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-size: 16px;
+        z-index: 9999;
+    }
+
+    .flash-success {
+        background-color: #7ec699;
+        color: #ffffff;
+    }
+
+    .flash-error {
+        background-color: #ff6b6b;
+        color: #ffffff;
+    }
   </style>
 </head>
 <body>
 
   <div class="container">
+    @if (session('success'))
+    <div class="flash-message flash-success">
+        {{ session('success') }}
+    </div>
+@endif
+
+@if (session('error'))
+    <div class="flash-message flash-error">
+        {{ session('error') }}
+    </div>
+@endif
     <h2>Registration</h2>
-    <form action="/api/register" method="POST">
+    <form action="/register" method="POST">
       @csrf
       <label for="firstname">First Name</label>
       <input type="text" id="firstname" name="first_name" required>
@@ -79,8 +109,32 @@
 
     </form>
     <div class="login-link">
-      Already have an account? <a href="/api/login">Login here</a>
+      Already have an account? <a href="/login">Login here</a>
     </div>
   </div>
+  <script>
+    // JavaScript code to show the pop-up message
+    function showPopup(message, isSuccess) {
+      var popup = document.createElement('div');
+      popup.className = isSuccess ? 'popup success' : 'popup error';
+      popup.textContent = message;
+      document.body.appendChild(popup);
+
+      setTimeout(function() {
+        popup.remove();
+      }, 3000);
+    }
+  </script>
+  <script>
+    // Add this JavaScript code in your HTML template or an external JS file
+    setTimeout(function() {
+        var flashMessages = document.getElementsByClassName('flash-message');
+        for (var i = 0; i < flashMessages.length; i++) {
+            flashMessages[i].style.display = 'none';
+        }
+    }, 3000);
+</script>
+
+  
 </body>
 </html>

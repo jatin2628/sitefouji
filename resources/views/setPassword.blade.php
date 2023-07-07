@@ -50,10 +50,40 @@
             border-radius: 5px;
             cursor: pointer;
         }
+        .flash-message {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-size: 16px;
+        z-index: 9999;
+    }
+
+    .flash-success {
+        background-color: #7ec699;
+        color: #ffffff;
+    }
+
+    .flash-error {
+        background-color: #ff6b6b;
+        color: #ffffff;
+    }
     </style>
 </head>
 <body>
-    <form action="/api/setnewpassword" method="POST">
+    @if (session('success'))
+        <div class="flash-message flash-success">
+            {{ session('success') }}
+        </div>
+    @endif
+    
+    @if (session('error'))
+        <div class="flash-message flash-error">
+            {{ session('error') }}
+        </div>
+    @endif
+    <form action="/setnewpassword" method="POST">
         @csrf
         <h2>Reset Password</h2>
         <input type="hidden" name="email" value="{{ $email }}">
@@ -61,5 +91,14 @@
         <input type="password" name="password_confirmation" placeholder="Confirm new password" required>
         <button type="submit">Reset Password</button>
     </form>
+    <script>
+        // Add this JavaScript code in your HTML template or an external JS file
+        setTimeout(function() {
+            var flashMessages = document.getElementsByClassName('flash-message');
+            for (var i = 0; i < flashMessages.length; i++) {
+                flashMessages[i].style.display = 'none';
+            }
+        }, 3000);
+    </script>
 </body>
 </html>

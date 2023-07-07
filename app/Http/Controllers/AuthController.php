@@ -7,17 +7,19 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use Validator;
-use Session;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cache;
 use Mail;
+use Illuminate\Support\Facades\Session;
+
+use function Termwind\render;
 
 class AuthController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login','check_otp','setnewpassword','forgetmail','updatePassword','register','registerPage','loginPage','forgetPage','fillotp','setPass']]);
+        $this->middleware('auth:api', ['except' => ['login','updatepage','updateProfile','profile','logout','check_otp','setnewpassword','forgetmail','updatePassword','register','registerPage','loginPage','forgetPage','fillotp','setPass']]);
     }
 
     public function register(Request $request)
@@ -30,7 +32,9 @@ class AuthController extends Controller
         
 
         if($validator->fails()) {
-            return response()->json($validator->errors(), 400);
+            
+            session()->flash('error', $validator->errors());
+            return redirect()->back();
         }
         $user = User::create([
                 'first_name' => $request->first_name,
@@ -44,6 +48,7 @@ class AuthController extends Controller
         //     'message' => 'User successfully registered',
         //     'user' => $user
         // ], 201);
+        session()->flash('success', 'Register successful! Please Login to continue');
         return view('login');
     }
 
@@ -55,21 +60,38 @@ class AuthController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+             session()->flash('error', $validator->errors());
+            return redirect()->back();
         }
 
         if (!$token = auth()->attempt($validator->validated())) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            session()->flash('error', 'Invalid credentials. Please try again.');
+            return redirect()->back();
+        }
+        session()->flash('success', 'Login successful!');
+        $user = auth()->user();
+        Session::put('user', $user);
+        
+        $user = Session::get('user');
+        if($user->account_type == '0'){
+            return redirect('/users');
+        }else{
+            if($user->location){
+            return redirect('/updatepage');
+            }
+            else{
+                return redirect('/profile');
+            }
         }
         
-        return $this->createNewToken($token);
+        
     }
 
     public function logout()
     {
-        auth()->logout();
 
-        return response()->json(['message' => 'User successfully logged out.']);
+        Session::forget('user');
+        return redirect('/login');
     }
 
     protected function createNewToken($token){
@@ -103,24 +125,6 @@ class AuthController extends Controller
 
     public function check_otp(Request $request)
     {
-        // $email = $req->email;
-        // //return $email;
-        // $data = User::where('token',$req->otp)->first();
-        // //return $data;
-        // $value = Cache::get($this->otp);
-        // if($value)
-        // {
-            
-        //    if($value == $req->otp)
-        //    {
-                
-        //         return view('setPassword',['product'=>$data]);
-        //    }
-        // }
-        // else 
-        // {
-        //     return "<h3><center>invalid otp or Expired OTP</center></h3>";
-        // }
 
         $request->validate([
             'otp' => 'required|digits:6',
@@ -130,71 +134,44 @@ class AuthController extends Controller
         $user = User::where('email', $request->input('email'))->first();
 
         if (!$user) {
-            return redirect()->back()->with('error', 'Invalid email address.');
+            session()->flash('error', 'Invalid email address.');
+            return redirect()->back();
         }
 
         // Check if the OTP matches
         if ($user->otp !== $request->input('otp')) {
-            return redirect()->back()->with('error', 'Invalid OTP.');
+            session()->flash('error', 'Invalid OTP.');
+            return view('fillotp',['email'=>$request->email]);
         }
 
         // OTP is verified
         // You can perform further actions here, such as redirecting to a password reset form
+        session()->flash('error', 'OTP verify successfully');
         return view('setPassword',['email'=>$request->email]);
         // return redirect()->route('setPass', ['token' => $user->reset_password_token])->with('success', 'OTP verified.');
     }
 
     public function forgetmail(Request $request)
     {
-        // $user =  User::where(['email'=>$req->email])->first();
-        // $random = rand(100000,999999);
-        //        //$rando = random(4); ****Generate Four random string***********
-        //         $data['email'] = $req->email;
-        //         $data['title'] = "Forget Password Mail";
-        //         $data['body'] = "Please verify OTP to reset your password";
-        //         $data['otp'] = $random;
-        //         $data['status'] ='2';
-              
-        //         //$this->copyotp = $random;
-
-        //         $sent = Mail::send('verifyMail',['data'=>$data],function($message) use ($data)
-        //         {
-        //             $message->to($data['email'])->subject($data['title']);
-        //         });
-
-        //         if($sent)
-        //         {
-        //             $user->token = $random;
-        //             $user->save();
-        //             $userid = User::find($user->id);
-        //             Cache::put($this->otp, $random,120);
-
-        //             //$req->session()->put('type', '2');
-        //             return view('fillotp',['email'=>$req->email]);
-        //         }
-        //         else 
-        //         {
-        //             return "failed";
-        //         }
-
+        
         $otp = mt_rand(100000, 999999); // Generate a 6-digit OTP
 
-        // Store the OTP in the user's record (e.g., user table or password reset token table)
-        // Replace 'user' with your user model
         $user = User::where('email', $request->input('email'))->first();
         if(!$user){
-            return response()->json(["msg"=>"User doesn't exist"]);
+            session()->flash('error', "User doesn't exist!");
+            return redirect()->back();
         }
         $user->otp = $otp;
         $user->save();
 
-        // Send OTP via email
+    
         $data = ['otp' => $otp];
         Mail::send('verifyMail', $data, function ($message) use ($user) {
             $message->to($user->email)->subject('Password Reset OTP');
         });
 
         // Confirmation message
+        session()->flash('success', "Otp send successfully");
         return view('fillotp',['email'=>$request->email]);
     }
 
@@ -202,23 +179,10 @@ class AuthController extends Controller
 
     public function setnewpassword(Request $request)
     {
-        //return $req;
-        // $user =  User::where(['email'=>$req->email])->first();
-        // $user->password=Hash::make($req->password);
-        // $res = $user->save();
-
-        // if($res)
-        // {
-        //     $msg = 'Password successfully changed !';
-        //     Session::flash ( 'message', $msg );
-        //         $data = Product::all();
-        //         return view('product',['products'=>$data]);
-        // }
 
         $request->validate([
             'email' => 'required|email',
-            'otp' => 'required|digits:6',
-            'password' => 'required|confirmed|min:8',
+            'password' => 'required|confirmed|min:6',
         ]);
 
         // Find the user with the provided email and OTP
@@ -226,16 +190,108 @@ class AuthController extends Controller
                     ->first();
 
         if (!$user) {
-            return redirect()->back()->with('error', 'Invalid email or OTP.');
+            session()->flash('error', "Invalid email or OTP.");
+            return redirect()->back();
         }
 
         // Update the user's password
         $user->password = Hash::make($request->input('password'));
-        $user->otp = null; // Clear the OTP field
+        $user->otp = null; 
         $user->save();
-
-        // Redirect to login page or any other desired page
-        return redirect('/login')->with('success', 'Password reset successfully.');
+        session()->flash('success', 'Password reset successfully.');
+        return redirect('/login');
 
     }
+
+    public function profile(){
+        $user = Session::get('user');
+        $user = User::where('id', $user->id)->first();
+        return view('profile',['user'=>$user]);
+    }
+
+//     public function updateProfile(Request $request)
+// {
+//     $validator = Validator::make($request->all(), [
+//         'firstName' => 'required|string',
+//         'email' => 'required|string|email|unique:users',
+//         'location' => 'required|string',
+//         'designation' => 'required|string',
+//         'bio' => 'required|string',
+//     ]);
+
+//     if ($validator->fails()) {
+//         return redirect()->back()->withErrors($validator)->withInput();
+//     }
+
+//     $user = Session::get('user');
+//     $user = User::where('id', $user->id)->first();
+
+  
+//     $user->first_name = $request->input('firstName');
+//     $user->last_name = $request->input('lastName');
+//     $user->location = $request->input('location');
+//     $user->designation = $request->input('designation');
+//     $user->bio = $request->input('bio');
+
+//     if ($request->hasFile('avatar')) {
+//         $file = $request->file('avatar');
+//         $originalName = $file->getClientOriginalName();
+//         $path = $file->storeAs('uploads', $originalName);
+//         $user->avatar = $originalName;
+//     }
+
+//     $user->save();
+
+//     return redirect('/user');
+// }
+
+
+public function updateProfile(Request $request)
+{
+    try {
+        
+        //code...
+    
+  
+   
+    
+   
+    // Retrieve the user from the session
+    $user = Session::get('user');
+    $user = User::where('id', $user->id)->first();
+    
+    $user->first_name = $request->first_name;
+    $user->last_name = $request->last_name;
+    $user->email = $request->email;
+    $user->location = $request->location;
+    $user->designation = $request->designation;
+    $user->bio = $request->bio;
+
+    if ($request->hasFile('avatar')) {
+        $file = $request->file('avatar');
+        $path = public_path('images');
+        $originalName = $file->getClientOriginalName();
+        $file->move($path, $originalName);
+        $user->avatar = $originalName;
+    }
+
+    $user->save();
+     return redirect('/updatepage');
+    
+  
+} catch (\Throwable $th) {
+    //throw $th;
+    return $th->getMessage();
+
+    // return redirect('/user');
+}
+
+}
+
+public function updatepage(){
+    $user = Session::get('user');
+    $user = User::where('id', $user->id)->first();
+
+    return view('uploadtest',['user'=>$user]);
+}
 }

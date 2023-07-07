@@ -64,15 +64,29 @@
         a:hover {
             text-decoration: underline;
         }
+
+        .logout-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #007bff;
+            color: #ffffff;
+            padding: 10px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+        }
     </style>
 </head>
 <body>
+    <a href="/logout" class="logout-button">Logout</a>
     <h1>User Files for {{ $user->first_name }}</h1>
 
     <table>
         <thead>
             <tr>
                 <th>File Name</th>
+                <th>Total Entries</th>
+                <th>Unique Entries</th>
                 <th>Status</th>
                 <th>Action</th>
             </tr>
@@ -81,6 +95,17 @@
             @foreach ($files as $file)
                 <tr>
                     <td>{{ $file->filename }}</td>
+                    <td>@if ($totalEntries[$file->id] == 0)
+                        -
+                    @else
+                        {{ $totalEntries[$file->id] }}
+                    @endif</td>
+                    <td> @if ($uniqueEntries[$file->id]==0)
+                        -
+                    @else
+                        {{ $uniqueEntries[$file->id] }}
+                        
+                    @endif</td>
                     <td>
                         @if ($file->status=='0')
                             <span class="status-pending">Pending</span>
@@ -93,12 +118,12 @@
                         @endif
                     </td>
                     <td>
-                    <a href="/api/userdata/{{$file->id}}/status/1">Approve</a> |
-                        <a href="/api/userdata/{{$file->id}}/status/2">Partially Approved</a> |
-                        <a href="/api/userdata/{{$file->id}}/status/3">Decline</a>
+                    <a href="/userdata/{{$file->id}}/status/1">Approve</a> |
+                        <a href="/userdata/{{$file->id}}/status/2">Partially Approved</a> |
+                        <a href="/userdata/{{$file->id}}/status/3">Decline</a>
                     </td>
-                    <td><a href="/api/userdata/{{$file->id}}/view" target="_blank">View</a></td>
-                    <td><a href="{{url('/api/download',$file->filename)}}">Download</a></td>
+                    <td><a href="/userdata/{{$file->id}}/view">View</a></td>
+                    <td><a href="{{url('/download',$file->filename)}}">Download</a></td>
                 </tr>
             @endforeach
         </tbody>

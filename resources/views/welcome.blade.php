@@ -138,3 +138,55 @@
         </div>
     </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="avatar-container">
+    <div class="avatar" id="avatar" onclick="clickAvatar()">
+      <img id="avatarImg" src="dummy-avatar.jpg" alt="">
+    </div>
+    <input type="file" id="avatarUpload" name="avatar" accept="image/*" onchange="previewImage(event)">
+  </div>
+  <div class="profile-form">
+    <h2>Profile Page</h2>
+    <div class="input-group name-container">
+      <div>
+        <label for="firstName">First Name</label>
+        <input type="text" id="firstName" placeholder="Enter your first name" name="first_name" value="{{$user->first_name}}">
+      </div>
+      <div>
+        <label for="lastName">Last Name</label>
+        <input type="text" id="lastName" placeholder="Enter your last name" name="last_name" value="{{$user->last_name}}">
+      </div>
+    </div>
+    <div class="input-group">
+      <label for="email">Email</label>
+      <input type="email" id="email" placeholder="Enter your email" name="email" value="{{$user->email}}">
+    </div>
+    <div class="input-group">
+      <label for="location">Location</label>
+      <input type="text" id="location" placeholder="Enter your location" name="location">
+    </div>
+    <div class="input-group">
+      <label for="designation">Designation</label>
+      <input type="text" id="designation" placeholder="Enter your designation" name="designation">
+    </div>
+    <div class="input-group bio-container">
+      <label for="bio">Bio</label>
+      <textarea id="bio" placeholder="Enter your bio" name="bio"></textarea>
+    </div>
+    <div class="input-group">
+      <button onclick="saveProfile()">Save</button>
+    </div>
+  </div>

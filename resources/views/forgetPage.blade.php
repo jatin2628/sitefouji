@@ -75,10 +75,40 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        .flash-message {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-size: 16px;
+        z-index: 9999;
+    }
+
+    .flash-success {
+        background-color: #7ec699;
+        color: #ffffff;
+    }
+
+    .flash-error {
+        background-color: #ff6b6b;
+        color: #ffffff;
+    }
     </style>
 </head>
 <body>
     <div class="container">
+        @if (session('success'))
+        <div class="flash-message flash-success">
+            {{ session('success') }}
+        </div>
+    @endif
+    
+    @if (session('error'))
+        <div class="flash-message flash-error">
+            {{ session('error') }}
+        </div>
+    @endif
         <form action="forgetmail" method="post" class="form-container">
             @csrf
             <h2 class="form-title">Forget Password</h2>
@@ -90,5 +120,14 @@
             <div class="loader" id="loader"></div>
         </form>
     </div>
+    <script>
+        // Add this JavaScript code in your HTML template or an external JS file
+        setTimeout(function() {
+            var flashMessages = document.getElementsByClassName('flash-message');
+            for (var i = 0; i < flashMessages.length; i++) {
+                flashMessages[i].style.display = 'none';
+            }
+        }, 3000);
+    </script>
 </body>
 </html>

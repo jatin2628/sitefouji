@@ -48,9 +48,50 @@
         a:hover {
             text-decoration: underline;
         }
+
+        .logout-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #007bff;
+            color: #ffffff;
+            padding: 10px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+        }
+        .flash-message {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-size: 16px;
+        z-index: 9999;
+    }
+
+    .flash-success {
+        background-color: #7ec699;
+        color: #ffffff;
+    }
+
+    .flash-error {
+        background-color: #ff6b6b;
+        color: #ffffff;
+    }
     </style>
 </head>
 <body>
+    @if (session('success'))
+    <div class="flash-message flash-success">
+        {{ session('success') }}
+    </div>
+@endif
+
+@if (session('error'))
+    <div class="flash-message flash-error">
+        {{ session('error') }}
+    </div>
+@endif
     <h1>User List</h1>
 
     <table>
@@ -67,11 +108,22 @@
                     <td>{{ $user->first_name.' '.$user->last_name }}</td>
                     <td>{{ $user->email }}</td>
                     <td>
-                        <a href="/api/userdata/{{$user->id}}">View Files</a>
+                        <a href="/userdata/{{$user->id}}">View Files</a>
                     </td>
                 </tr>
             @endforeach
         </tbody>
     </table>
+
+    <a class="logout-button" href="/logout">Logout</a>
+    <script>
+        // Add this JavaScript code in your HTML template or an external JS file
+        setTimeout(function() {
+            var flashMessages = document.getElementsByClassName('flash-message');
+            for (var i = 0; i < flashMessages.length; i++) {
+                flashMessages[i].style.display = 'none';
+            }
+        }, 3000);
+    </script>
 </body>
 </html>

@@ -54,12 +54,43 @@
       color: #333333;
       text-decoration: none;
     }
+    .flash-message {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-size: 16px;
+        z-index: 9999;
+    }
+
+    .flash-success {
+        background-color: #7ec699;
+        color: #ffffff;
+    }
+
+    .flash-error {
+        background-color: #ff6b6b;
+        color: #ffffff;
+    }
   </style>
 </head>
 <body>
   <div class="container">
+    @if (session('success'))
+    <div class="flash-message flash-success">
+        {{ session('success') }}
+    </div>
+@endif
+
+@if (session('error'))
+    <div class="flash-message flash-error">
+        {{ session('error') }}
+    </div>
+@endif
+
     <h2>Login</h2>
-    <form action="/api/login" method="POST">
+    <form action="/login" method="POST">
     @csrf
       <label for="email">Email</label>
       <input type="email" id="email" name="email" required>
@@ -71,8 +102,17 @@
 
     </form>
     <div class="forgot-password">
-      <a href="/api/forgetPassword">Forgot password?</a>
+      <a href="/forgetPassword">Forgot password?</a>
     </div>
   </div>
+  <script>
+    // Add this JavaScript code in your HTML template or an external JS file
+    setTimeout(function() {
+        var flashMessages = document.getElementsByClassName('flash-message');
+        for (var i = 0; i < flashMessages.length; i++) {
+            flashMessages[i].style.display = 'none';
+        }
+    }, 3000);
+</script>
 </body>
 </html>
